@@ -305,7 +305,8 @@ class NeteaseMusicPlayer(MusicPlayer):
             self.shuffle_songs()
         ### 当获取到每日推荐歌曲时
          ##  根据id获取时
-        self.playlist = self.get_playlist_detail(listId])
+        elif listId
+            self.playlist = self.get_playlist_detail(listId])
             self.shuffle_songs()
        
         else:
@@ -505,7 +506,7 @@ class Plugin(AbstractPlugin):
             ###################################获取我的歌单####################################
             ###################################获取用户的红心歌单（用户喜欢的音乐）###########################################
             elif any(word in text for word in ['随机播放思念']):
-                self.player.set_playlist(isLikeList=True)
+                self.player.set_playlist(listId)
                 if self.player.playlist:
                     self.isOpenLikelist = True
                     self.say('歌单共有{}首歌曲'.format(len(self.player.playlist)), wait=True)
