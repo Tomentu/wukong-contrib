@@ -285,7 +285,7 @@ class NeteaseMusicPlayer(MusicPlayer):
             datalist = self.api.dig_info(self.api.artists(data['artists'][0]['id']), 'songs')
         return self.pack_info(datalist, "song_id", "song_name", "mp3_url", "artist", "album_name", "album_id", "expires", "get_time")
 
-    def set_playlist(self, listNumber=None, singerName=None, songName=None, isLikeList=False):
+    def set_playlist(self,listId=None, listNumber=None, singerName=None, songName=None, isLikeList=False):
         ### 当获取到歌手名和歌名时
         if singerName and songName:
             self.playlist = self.get_search_result(singerName, songName)
@@ -304,6 +304,10 @@ class NeteaseMusicPlayer(MusicPlayer):
             self.playlist = self.get_likelist_songs()
             self.shuffle_songs()
         ### 当获取到每日推荐歌曲时
+         ##  根据id获取时
+        self.playlist = self.get_playlist_detail(listId])
+            self.shuffle_songs()
+       
         else:
             self.playlist = self.get_recommend_songs()
 
@@ -356,6 +360,7 @@ class Plugin(AbstractPlugin):
         self.isSearch = None
         self.isContinueAsking = False
         self.playlist_number_cut = 1
+        self.isUserPause = False
 
     def handle_multilists(self, text):
         ### 多轮询问用户想选择的歌单，一直循环直到得到答案或喊出’不用‘
@@ -498,6 +503,17 @@ class Plugin(AbstractPlugin):
                     self.say('哎！获取不到你的红心歌单！不好意思。', cache=True, wait=True)
 
             ###################################获取我的歌单####################################
+            ###################################获取用户的红心歌单（用户喜欢的音乐）###########################################
+            elif any(word in text for word in ['随机播放思念']):
+                self.player.set_playlist(isLikeList=True)
+                if self.player.playlist:
+                    self.isOpenLikelist = True
+                    self.say('歌单共有{}首歌曲'.format(len(self.player.playlist)), wait=True)
+                    self.player.play()
+                else:
+                    self.say('哎！获取不到歌单！不好意思。', cache=True, wait=True)
+
+            ###################################获取我的歌单####################################
             elif any(word in text for word in ['我的歌单', '我的网易云歌单']):
                 playlists_info = self.player.get_playlist(fromUser=True)
                 logger.info(playlists_info)
@@ -583,9 +599,11 @@ class Plugin(AbstractPlugin):
             elif self.nlu.hasIntent(parsed, 'PAUSE'):
                 if self.player.playlist:
                     self.player.pause()
+                    self.isUserPause = True
             elif self.nlu.hasIntent(parsed, 'CONTINUE'):
                 if self.player.playlist:
                     self.player.resume()
+                    self.isUserPause = False
             elif self.nlu.hasIntent(parsed, 'RESTART_MUSIC'):
                 if self.player.playlist:
                     self.player.play()
@@ -605,10 +623,10 @@ class Plugin(AbstractPlugin):
 
     def pause(self):
         if self.player:
-            self.player.stop()
+            self.player.pause()
 
     def restore(self):
-        if self.player and not self.player.is_pausing():
+        if self.player and not self.isUserPause:
             self.player.resume()
 
     def isValidImmersive(self, text, parsed):
